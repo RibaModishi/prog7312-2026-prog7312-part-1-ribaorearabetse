@@ -28,7 +28,7 @@
 		<MauiXamlInflator>SourceGen</MauiXamlInflator>
 
 		<!-- Display name -->
-		<ApplicationTitle>SmartX.Client</ApplicationTitle>
+		<ApplicationTitle>Smart-X Gateway</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.smartx.client</ApplicationId>

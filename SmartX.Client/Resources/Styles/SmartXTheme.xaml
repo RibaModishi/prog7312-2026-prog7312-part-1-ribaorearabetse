@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Shared Smart-X palette and control styles. Keeping them here rather than inline on each page
+    means every screen added later inherits the same spacing, typography and accent colour without
+    a second set of magic numbers drifting out of step with this one.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <Color x:Key="SmartXBackground">#0B1220</Color>
+    <Color x:Key="SmartXSurface">#16202E</Color>
+    <Color x:Key="SmartXBorder">#243044</Color>
+    <Color x:Key="SmartXAccent">#2DD4BF</Color>
+    <Color x:Key="SmartXAccentSoft">#134E4A</Color>
+    <Color x:Key="SmartXTextPrimary">#E6EDF3</Color>
+    <Color x:Key="SmartXTextSecondary">#8B9AAD</Color>
+
+    <Style x:Key="SmartXPage" TargetType="ContentPage">
+        <Setter Property="BackgroundColor" Value="{StaticResource SmartXBackground}" />
+    </Style>
+
+    <Style x:Key="PageTitle" TargetType="Label">
+        <Setter Property="FontSize" Value="32" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextPrimary}" />
+    </Style>
+
+    <Style x:Key="PageSubtitle" TargetType="Label">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextSecondary}" />
+    </Style>
+
+    <Style x:Key="SectionLabel" TargetType="Label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="1.6" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextSecondary}" />
+    </Style>
+
+    <Style x:Key="PillarCard" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource SmartXSurface}" />
+        <Setter Property="Stroke" Value="{StaticResource SmartXBorder}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="22,20" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="14" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PillarTitle" TargetType="Label">
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextPrimary}" />
+    </Style>
+
+    <Style x:Key="PillarDescription" TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextSecondary}" />
+    </Style>
+
+    <Style x:Key="StatusBadge" TargetType="Label">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="1.2" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextSecondary}" />
+    </Style>
+
+</ResourceDictionary>
