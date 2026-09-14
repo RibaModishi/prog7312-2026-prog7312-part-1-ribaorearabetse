@@ -121,6 +121,26 @@ public class DeploymentValidatorTests
     }
 
     [Fact]
+    public void Validate_ReportsSiblingsWhoseNamesDifferOnlyByCase()
+    {
+        var zone = new DeploymentNode
+        {
+            Name = "Zone 1",
+            NodeType = DeploymentNodeType.Zone,
+            Children =
+            [
+                new DeploymentNode { Name = "Sub-Zone B", NodeType = DeploymentNodeType.SubZone },
+                new DeploymentNode { Name = "sub-zone b", NodeType = DeploymentNodeType.SubZone }
+            ]
+        };
+
+        var violations = DeploymentValidator.Validate(zone);
+
+        var violation = Assert.Single(violations);
+        Assert.Contains("sibling nodes named", violation);
+    }
+
+    [Fact]
     public void Validate_AllowsTheSameNameUnderDifferentParents()
     {
         var facility = new DeploymentNode

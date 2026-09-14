@@ -26,10 +26,12 @@ public static class DeploymentValidator
         }
 
         // Grouping only the immediate children keeps this check to one level, so nodes that share
-        // a name under different parents elsewhere in the tree are left alone.
+        // a name under different parents elsewhere in the tree are left alone. Casing is ignored
+        // because two sibling zones differing only in case would be indistinguishable on a
+        // dashboard and almost certainly a configuration mistake.
         var duplicateSiblings = node.Children
             .Where(child => !string.IsNullOrWhiteSpace(child.Name))
-            .GroupBy(child => child.Name, StringComparer.Ordinal)
+            .GroupBy(child => child.Name, StringComparer.OrdinalIgnoreCase)
             .Where(siblings => siblings.Count() > 1);
 
         foreach (var siblings in duplicateSiblings)
