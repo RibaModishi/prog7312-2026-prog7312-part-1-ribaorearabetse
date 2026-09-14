@@ -23,5 +23,11 @@ public readonly struct PowerReading
     public static bool operator <(PowerReading left, PowerReading right) =>
         left.Watts < right.Watts;
 
+    public static bool operator >=(PowerReading left, PowerReading right) =>
+        left.Watts >= right.Watts;
+
+    public static bool operator <=(PowerReading left, PowerReading right) =>
+        left.Watts <= right.Watts;
+
     public override string ToString() => $"{Watts:0.##} W";
 }

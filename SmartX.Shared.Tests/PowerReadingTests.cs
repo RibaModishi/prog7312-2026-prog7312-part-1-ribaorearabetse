@@ -66,4 +66,25 @@ public class PowerReadingTests
         Assert.False(left > right);
         Assert.False(left < right);
     }
+
+    [Fact]
+    public void GreaterThanOrEqual_TriggersOnAReadingSittingExactlyOnTheThreshold()
+    {
+        var reading = new PowerReading(1_000);
+        var threshold = new PowerReading(1_000);
+
+        Assert.True(reading >= threshold);
+        Assert.True(reading <= threshold);
+    }
+
+    [Fact]
+    public void InclusiveComparisons_StillRespectReadingsEitherSideOfTheThreshold()
+    {
+        var threshold = new PowerReading(1_000);
+
+        Assert.True(new PowerReading(1_001) >= threshold);
+        Assert.False(new PowerReading(999) >= threshold);
+        Assert.True(new PowerReading(999) <= threshold);
+        Assert.False(new PowerReading(1_001) <= threshold);
+    }
 }
