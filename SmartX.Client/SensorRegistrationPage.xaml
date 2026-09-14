@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SmartX.Client.SensorRegistrationPage"
+             Style="{StaticResource SmartXPage}"
+             Title="Sensor Registration">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24,32,24,40"
+                             Spacing="12"
+                             HorizontalOptions="Center"
+                             MaximumWidthRequest="680">
+
+            <Label Text="SENSOR DATA INGESTION" Style="{StaticResource SectionLabel}" />
+            <Label Text="Sensor Registration" Style="{StaticResource PageTitle}" />
+            <Label Text="Registration screen — coming next."
+                   Style="{StaticResource PageSubtitle}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
