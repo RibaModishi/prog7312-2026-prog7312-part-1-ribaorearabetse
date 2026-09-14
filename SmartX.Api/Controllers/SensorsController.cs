@@ -25,11 +25,17 @@ public class SensorsController(SmartXStore store, IWebHostEnvironment environmen
             return BadRequest(new { violations = result.Violations });
         }
 
-        return CreatedAtAction(nameof(GetAll), result.Sensor);
+        return CreatedAtAction(nameof(GetById), new { sensorId = result.Sensor!.MacAddress }, result.Sensor);
     }
 
     [HttpGet]
     public ActionResult<IReadOnlyCollection<SensorRecord>> GetAll() => Ok(store.Sensors);
+
+    [HttpGet("{sensorId}")]
+    public ActionResult<SensorRecord> GetById(string sensorId) =>
+        store.TryGetSensor(sensorId, out var sensor)
+            ? Ok(sensor)
+            : NotFound(new { error = $"Sensor '{sensorId}' is not registered." });
 
     [HttpGet("/api/deployment-tree")]
     public ActionResult<DeploymentNode> GetDeploymentTree() => Ok(store.DeploymentTree);
