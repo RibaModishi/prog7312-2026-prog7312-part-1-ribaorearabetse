@@ -24,6 +24,7 @@ public class SmartXStore
 
     private readonly object _gate = new();
     private readonly Dictionary<string, SensorRecord> _sensors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DateTime> _lastSeenUtc = new(StringComparer.OrdinalIgnoreCase);
     private readonly CategoryChannel<float> _environmental = new();
     private readonly CategoryChannel<int> _power = new();
     private readonly CategoryChannel<bool> _actuator = new();
@@ -92,6 +93,9 @@ public class SmartXStore
             };
 
             _sensors[macAddress] = record;
+            // Seeded at registration so a sensor that has not yet published is given a full
+            // overdue window before the disconnect watcher treats the silence as a fault.
+            _lastSeenUtc[macAddress] = DateTime.UtcNow;
             return RegistrationResult.Succeeded(record);
         }
     }
@@ -146,9 +150,27 @@ public class SmartXStore
             }
 
             readings.Add(packet);
+            _lastSeenUtc[sensorId] = packet.Timestamp;
         }
 
         return packet;
+    }
+
+    /// <summary>
+    /// Snapshot of every registered sensor together with when it last published. Taken under one
+    /// lock so the disconnect watcher cannot observe a sensor whose last-seen entry has not been
+    /// written yet, which would look like a node that never came online.
+    /// </summary>
+    public IReadOnlyList<(SensorRecord Sensor, DateTime LastSeenUtc)> SnapshotLastSeen()
+    {
+        lock (_gate)
+        {
+            return _sensors.Values
+                .Select(sensor => (
+                    sensor,
+                    _lastSeenUtc.TryGetValue(sensor.MacAddress, out var seen) ? seen : sensor.RegisteredAtUtc))
+                .ToList();
+        }
     }
 
     private IReadOnlyList<TelemetryPacket<T>> Recent<T>(CategoryChannel<T> channel, string sensorId)
