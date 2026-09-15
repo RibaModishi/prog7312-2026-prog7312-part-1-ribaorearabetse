@@ -47,6 +47,9 @@ public partial class SensorRegistrationPage : ContentPage
     private async void OnBackTapped(object? sender, TappedEventArgs e) =>
         await Shell.Current.GoToAsync("..");
 
+    private async void OnDashboardTapped(object? sender, TappedEventArgs e) =>
+        await Shell.Current.GoToAsync("dashboard");
+
     private async void OnSubmitClicked(object? sender, EventArgs e)
     {
         var macAddress = MacAddressEntry.Text?.Trim() ?? string.Empty;

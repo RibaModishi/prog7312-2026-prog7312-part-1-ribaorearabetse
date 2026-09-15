@@ -15,6 +15,7 @@
     <Color x:Key="SmartXTextPrimary">#E6EDF3</Color>
     <Color x:Key="SmartXTextSecondary">#8B9AAD</Color>
     <Color x:Key="SmartXDanger">#F87171</Color>
+    <Color x:Key="SmartXWarning">#FBBF24</Color>
     <Color x:Key="SmartXFieldBackground">#0F1825</Color>
 
     <Style x:Key="SmartXPage" TargetType="ContentPage">

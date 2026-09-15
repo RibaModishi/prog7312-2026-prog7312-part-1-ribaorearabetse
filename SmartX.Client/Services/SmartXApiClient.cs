@@ -61,6 +61,42 @@ public class SmartXApiClient(HttpClient httpClient)
     }
 
     /// <summary>
+    /// Snapshot of the currently open alert groups. An empty list is a successful read — it means
+    /// the mesh is quiet, not that the gateway failed — so the dashboard can show an empty state
+    /// without treating silence as an error.
+    /// </summary>
+    public async Task<AlertDashboardOutcome> GetActiveAlertsAsync()
+    {
+        try
+        {
+            using var response = await httpClient.GetAsync("api/alerts");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return AlertDashboardOutcome.Failed(
+                    $"The gateway responded with {(int)response.StatusCode} {response.ReasonPhrase}.");
+            }
+
+            var groups = await response.Content.ReadFromJsonAsync<List<AlertGroup>>(JsonOptions);
+
+            return AlertDashboardOutcome.Succeeded(groups ?? []);
+        }
+        catch (HttpRequestException)
+        {
+            return AlertDashboardOutcome.Failed(
+                $"Could not reach the Smart-X gateway at {httpClient.BaseAddress}. Check the API is running.");
+        }
+        catch (TaskCanceledException)
+        {
+            return AlertDashboardOutcome.Failed("The gateway did not respond in time.");
+        }
+        catch (JsonException)
+        {
+            return AlertDashboardOutcome.Failed("The gateway returned a response the client could not read.");
+        }
+    }
+
+    /// <summary>
     /// Uploads a configuration file, deployment photo or hardware log against a registered sensor.
     /// The file is streamed rather than read into a byte array, so attaching a large hardware log
     /// does not cost the device a matching allocation.
@@ -247,4 +283,27 @@ public class AttachmentUploadOutcome
     public static AttachmentUploadOutcome Succeeded(string fileName) => new(fileName, null);
 
     public static AttachmentUploadOutcome Failed(string errorMessage) => new(null, errorMessage);
+}
+
+/// <summary>
+/// Result of a dashboard poll. Groups are kept as a list even when empty so the UI can tell a
+/// quiet mesh apart from a failed fetch without a second null check.
+/// </summary>
+public class AlertDashboardOutcome
+{
+    private AlertDashboardOutcome(IReadOnlyList<AlertGroup>? groups, string? errorMessage)
+    {
+        Groups = groups ?? [];
+        ErrorMessage = errorMessage;
+    }
+
+    public IReadOnlyList<AlertGroup> Groups { get; }
+
+    public string? ErrorMessage { get; }
+
+    public bool IsSuccess => ErrorMessage is null;
+
+    public static AlertDashboardOutcome Succeeded(IReadOnlyList<AlertGroup> groups) => new(groups, null);
+
+    public static AlertDashboardOutcome Failed(string errorMessage) => new(null, errorMessage);
 }

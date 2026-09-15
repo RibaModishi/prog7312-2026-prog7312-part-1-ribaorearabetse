@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:contracts="clr-namespace:SmartX.Shared.Contracts;assembly=SmartX.Shared"
+             x:Class="SmartX.Client.AlertDashboardPage"
+             Style="{StaticResource SmartXPage}"
+             Title="Live Dashboard"
+             Shell.NavBarIsVisible="False">
+
+    <Grid HorizontalOptions="Center"
+          MaximumWidthRequest="680"
+          Padding="24,24,24,24"
+          RowDefinitions="Auto,Auto,*,Auto"
+          RowSpacing="16">
+
+        <Label Grid.Row="0"
+               Text="&#x2190; Back to registration"
+               FontSize="14"
+               TextColor="{StaticResource SmartXAccent}">
+            <Label.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnBackTapped" />
+            </Label.GestureRecognizers>
+        </Label>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <VerticalStackLayout Grid.Column="0" Spacing="8">
+                <Label Text="SENSOR DATA INGESTION" Style="{StaticResource SectionLabel}" />
+                <Label Text="Live Alert Dashboard" Style="{StaticResource PageTitle}" />
+                <Label Style="{StaticResource PageSubtitle}"
+                       Text="Grouped incidents from the mesh — each card is one sensor's open time window, not a flat list of every reading that crossed a line." />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Column="1"
+                                 Spacing="8"
+                                 VerticalOptions="Start">
+                <Button x:Name="RefreshButton"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Refresh"
+                        Clicked="OnRefreshClicked" />
+                <ActivityIndicator x:Name="RefreshSpinner"
+                                   IsVisible="False"
+                                   IsRunning="False"
+                                   Color="{StaticResource SmartXAccent}"
+                                   HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <CollectionView x:Name="AlertList"
+                        Grid.Row="2"
+                        SelectionMode="None"
+                        ItemsUpdatingScrollMode="KeepItemsInView">
+            <CollectionView.EmptyView>
+                <Border Style="{StaticResource PillarCard}" Margin="0,24,0,0">
+                    <Label Text="No active alerts — the mesh is quiet."
+                           Style="{StaticResource PageSubtitle}"
+                           HorizontalTextAlignment="Center" />
+                </Border>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="14" />
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="contracts:AlertGroup">
+                    <Border Style="{StaticResource PillarCard}"
+                            Stroke="{StaticResource SmartXWarning}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border"
+                                         Binding="{Binding Severity}"
+                                         Value="Critical">
+                                <Setter Property="Stroke" Value="{StaticResource SmartXDanger}" />
+                            </DataTrigger>
+                        </Border.Triggers>
+
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="{Binding Severity}"
+                                   Style="{StaticResource StatusBadge}"
+                                   TextColor="{StaticResource SmartXWarning}">
+                                <Label.Triggers>
+                                    <DataTrigger TargetType="Label"
+                                                 Binding="{Binding Severity}"
+                                                 Value="Critical">
+                                        <Setter Property="TextColor" Value="{StaticResource SmartXDanger}" />
+                                    </DataTrigger>
+                                </Label.Triggers>
+                            </Label>
+
+                            <Label Text="{Binding SensorId}" Style="{StaticResource PillarTitle}" />
+                            <Label Text="{Binding DeploymentPath}" Style="{StaticResource PillarDescription}" />
+
+                            <Label Style="{StaticResource FieldHint}">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="Window " />
+                                        <Span Text="{Binding WindowStart, StringFormat='{0:HH:mm:ss}'}" />
+                                        <Span Text=" – " />
+                                        <Span Text="{Binding WindowEnd, StringFormat='{0:HH:mm:ss}'}" />
+                                        <Span Text=" UTC" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+
+                            <!--
+                                Every folded alert is listed, matching the registration feedback
+                                card: one line per fault so a grouped incident still shows its full
+                                history rather than only the latest message.
+                            -->
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Alerts}"
+                                                 Spacing="4">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="contracts:Alert">
+                                        <Label FontSize="14"
+                                               TextColor="{StaticResource SmartXTextSecondary}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="• " />
+                                                    <Span Text="{Binding Message}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Label x:Name="StatusLabel"
+               Grid.Row="3"
+               Style="{StaticResource FieldHint}"
+               HorizontalTextAlignment="Center" />
+    </Grid>
+
+</ContentPage>

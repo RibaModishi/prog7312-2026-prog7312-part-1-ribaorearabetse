@@ -30,6 +30,7 @@ public static class MauiProgram
 		// SensorRegistrationPage its SmartXApiClient without a service locator.
 		builder.Services.AddSingleton<MainPage>();
 		builder.Services.AddTransient<SensorRegistrationPage>();
+		builder.Services.AddTransient<AlertDashboardPage>();
 
 #if DEBUG
 		builder.Logging.AddDebug();

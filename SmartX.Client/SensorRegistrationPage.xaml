@@ -16,14 +16,29 @@
     <ScrollView HorizontalOptions="Center" MaximumWidthRequest="680">
         <VerticalStackLayout Padding="24,24,24,40" Spacing="20">
 
-            <Label x:Name="BackLink"
-                   Text="&#x2190; Back to menu"
-                   FontSize="14"
-                   TextColor="{StaticResource SmartXAccent}">
-                <Label.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnBackTapped" />
-                </Label.GestureRecognizers>
-            </Label>
+            <Grid ColumnDefinitions="*,Auto">
+                <Label x:Name="BackLink"
+                       Grid.Column="0"
+                       Text="&#x2190; Back to menu"
+                       FontSize="14"
+                       TextColor="{StaticResource SmartXAccent}"
+                       HorizontalOptions="Start">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackTapped" />
+                    </Label.GestureRecognizers>
+                </Label>
+
+                <Label x:Name="DashboardLink"
+                       Grid.Column="1"
+                       Text="View Live Dashboard &#x2192;"
+                       FontSize="14"
+                       TextColor="{StaticResource SmartXAccent}"
+                       HorizontalOptions="End">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnDashboardTapped" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </Grid>
 
             <VerticalStackLayout Spacing="8">
                 <Label Text="SENSOR DATA INGESTION" Style="{StaticResource SectionLabel}" />
