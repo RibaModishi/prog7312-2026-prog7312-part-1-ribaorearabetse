@@ -14,6 +14,8 @@
     <Color x:Key="SmartXAccentSoft">#134E4A</Color>
     <Color x:Key="SmartXTextPrimary">#E6EDF3</Color>
     <Color x:Key="SmartXTextSecondary">#8B9AAD</Color>
+    <Color x:Key="SmartXDanger">#F87171</Color>
+    <Color x:Key="SmartXFieldBackground">#0F1825</Color>
 
     <Style x:Key="SmartXPage" TargetType="ContentPage">
         <Setter Property="BackgroundColor" Value="{StaticResource SmartXBackground}" />
@@ -58,6 +60,41 @@
     <Style x:Key="PillarDescription" TargetType="Label">
         <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{StaticResource SmartXTextSecondary}" />
+    </Style>
+
+    <Style x:Key="FieldLabel" TargetType="Label">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextPrimary}" />
+    </Style>
+
+    <Style x:Key="FieldHint" TargetType="Label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextSecondary}" />
+    </Style>
+
+    <Style x:Key="FormEntry" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="{StaticResource SmartXFieldBackground}" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource SmartXTextSecondary}" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="HeightRequest" Value="44" />
+    </Style>
+
+    <Style x:Key="FormPicker" TargetType="Picker">
+        <Setter Property="BackgroundColor" Value="{StaticResource SmartXFieldBackground}" />
+        <Setter Property="TextColor" Value="{StaticResource SmartXTextPrimary}" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="HeightRequest" Value="44" />
+    </Style>
+
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource SmartXAccent}" />
+        <Setter Property="TextColor" Value="#062925" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="HeightRequest" Value="48" />
+        <Setter Property="CornerRadius" Value="10" />
     </Style>
 
     <Style x:Key="StatusBadge" TargetType="Label">

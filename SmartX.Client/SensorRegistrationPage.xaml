@@ -3,18 +3,110 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="SmartX.Client.SensorRegistrationPage"
              Style="{StaticResource SmartXPage}"
-             Title="Sensor Registration">
+             Title="Sensor Registration"
+             Shell.NavBarIsVisible="False">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24,32,24,40"
-                             Spacing="12"
-                             HorizontalOptions="Center"
-                             MaximumWidthRequest="680">
+    <!--
+        The width cap sits on the ScrollView rather than on its child. A capped, centred child
+        inside a ScrollView is measured against an unconstrained width, so the page lays itself out
+        wider and taller than the viewport and the scrollbar stops before the submit button. Capping
+        the ScrollView keeps the reading width comfortable on a desktop window and still collapses
+        to the full width of a phone screen.
+    -->
+    <ScrollView HorizontalOptions="Center" MaximumWidthRequest="680">
+        <VerticalStackLayout Padding="24,24,24,40" Spacing="20">
 
-            <Label Text="SENSOR DATA INGESTION" Style="{StaticResource SectionLabel}" />
-            <Label Text="Sensor Registration" Style="{StaticResource PageTitle}" />
-            <Label Text="Registration screen — coming next."
-                   Style="{StaticResource PageSubtitle}" />
+            <Label x:Name="BackLink"
+                   Text="&#x2190; Back to menu"
+                   FontSize="14"
+                   TextColor="{StaticResource SmartXAccent}">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBackTapped" />
+                </Label.GestureRecognizers>
+            </Label>
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="SENSOR DATA INGESTION" Style="{StaticResource SectionLabel}" />
+                <Label Text="Register a Sensor" Style="{StaticResource PageTitle}" />
+                <Label Style="{StaticResource PageSubtitle}"
+                       Text="Attach a node to the deployment tree. The gateway validates the whole estate before accepting it, so any structural problem is reported before the sensor is recorded." />
+            </VerticalStackLayout>
+
+            <Border Style="{StaticResource PillarCard}">
+                <VerticalStackLayout Spacing="16">
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Device MAC Address / Unique Identifier" Style="{StaticResource FieldLabel}" />
+                        <Entry x:Name="MacAddressEntry"
+                               Style="{StaticResource FormEntry}"
+                               Placeholder="A4:CF:12:01:AA:01" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Facility" Style="{StaticResource FieldLabel}" />
+                        <Entry x:Name="FacilityEntry"
+                               Style="{StaticResource FormEntry}"
+                               Placeholder="Facility A" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Zone" Style="{StaticResource FieldLabel}" />
+                        <Entry x:Name="ZoneEntry"
+                               Style="{StaticResource FormEntry}"
+                               Placeholder="Zone 1" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Sub-Zone" Style="{StaticResource FieldLabel}" />
+                        <Label Text="Optional — leave blank to place the sensor directly in the zone."
+                               Style="{StaticResource FieldHint}" />
+                        <Entry x:Name="SubZoneEntry"
+                               Style="{StaticResource FormEntry}"
+                               Placeholder="Sub-Zone B" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Sensor Category" Style="{StaticResource FieldLabel}" />
+                        <!--
+                            No Title is set: a Picker with a Title renders that text instead of the
+                            selected item, which left the control looking empty even when a category
+                            was chosen. The field label above already says what this control is.
+                        -->
+                        <Picker x:Name="CategoryPicker"
+                                Style="{StaticResource FormPicker}"
+                                ItemDisplayBinding="{Binding Display}" />
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Button x:Name="SubmitButton"
+                                Grid.Column="0"
+                                Style="{StaticResource PrimaryButton}"
+                                Text="Register Sensor"
+                                Clicked="OnSubmitClicked" />
+                        <ActivityIndicator x:Name="SubmitSpinner"
+                                           Grid.Column="1"
+                                           IsVisible="False"
+                                           IsRunning="False"
+                                           Color="{StaticResource SmartXAccent}"
+                                           VerticalOptions="Center" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!--
+                One feedback panel serves both outcomes. The stroke colour carries the success or
+                failure signal, and every violation is appended as its own line rather than being
+                collapsed into a single sentence.
+            -->
+            <Border x:Name="FeedbackCard"
+                    Style="{StaticResource PillarCard}"
+                    IsVisible="False">
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="FeedbackHeading" Style="{StaticResource PillarTitle}" />
+                    <VerticalStackLayout x:Name="FeedbackDetails" Spacing="4" />
+                </VerticalStackLayout>
+            </Border>
 
         </VerticalStackLayout>
     </ScrollView>
