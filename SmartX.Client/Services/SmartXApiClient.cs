@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -60,12 +61,97 @@ public class SmartXApiClient(HttpClient httpClient)
     }
 
     /// <summary>
-    /// A rejected registration can come back in two shapes. The validator's own
-    /// <c>{ violations: [...] }</c> is the normal one, but a request that fails model binding never
-    /// reaches the validator and is answered with ASP.NET's ProblemDetails instead. Reporting
-    /// nothing in that case would hide a real bug, so the problem's own wording is surfaced.
+    /// Uploads a configuration file, deployment photo or hardware log against a registered sensor.
+    /// The file is streamed rather than read into a byte array, so attaching a large hardware log
+    /// does not cost the device a matching allocation.
     /// </summary>
+    public async Task<AttachmentUploadOutcome> UploadAttachmentAsync(string sensorId, FileResult file)
+    {
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            await using var stream = await file.OpenReadAsync();
+            using var filePart = new StreamContent(stream);
+
+            filePart.Headers.ContentType = ResolveContentType(file);
+
+            // The part name has to be "file" because that is what the IFormFile parameter on
+            // SensorsController.UploadAttachment is called. Any other name still uploads cleanly
+            // and the server simply binds null, which is a genuinely confusing way to fail.
+            content.Add(filePart, "file", file.FileName);
+
+            using var response = await httpClient.PostAsync($"api/sensors/{Uri.EscapeDataString(sensorId)}/attachments", content);
+            var body = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return AttachmentUploadOutcome.Failed(ExtractError(body, response.StatusCode));
+            }
+
+            var saved = JsonSerializer.Deserialize<AttachmentPayload>(body, JsonOptions);
+
+            return string.IsNullOrWhiteSpace(saved?.SavedName)
+                ? AttachmentUploadOutcome.Failed("The gateway stored the file but did not say under what name.")
+                : AttachmentUploadOutcome.Succeeded(saved.SavedName);
+        }
+        catch (HttpRequestException)
+        {
+            return AttachmentUploadOutcome.Failed(
+                $"Could not reach the Smart-X gateway at {httpClient.BaseAddress}. Check the API is running.");
+        }
+        catch (TaskCanceledException)
+        {
+            return AttachmentUploadOutcome.Failed("The upload did not complete in time.");
+        }
+        catch (JsonException)
+        {
+            return AttachmentUploadOutcome.Failed("The gateway returned a response the client could not read.");
+        }
+        catch (IOException)
+        {
+            return AttachmentUploadOutcome.Failed($"'{file.FileName}' could not be read from this device.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return AttachmentUploadOutcome.Failed($"This app is not allowed to read '{file.FileName}'.");
+        }
+    }
+
+    /// <summary>
+    /// A picked file does not always carry a usable content type, and a malformed one would throw
+    /// while building the request rather than being reported as a failed upload.
+    /// </summary>
+    private static MediaTypeHeaderValue ResolveContentType(FileResult file) =>
+        MediaTypeHeaderValue.TryParse(file.ContentType, out var contentType)
+            ? contentType
+            : new MediaTypeHeaderValue("application/octet-stream");
+
+    private static string ExtractError(string body, HttpStatusCode statusCode)
+    {
+        var messages = ExtractMessages(body);
+
+        return messages.Count > 0
+            ? string.Join(" ", messages)
+            : $"The gateway rejected the upload with {(int)statusCode} {statusCode}.";
+    }
+
     private static IReadOnlyList<string> ExtractViolations(string body)
+    {
+        var messages = ExtractMessages(body);
+
+        return messages.Count > 0
+            ? messages
+            : ["The gateway rejected the registration without explaining why."];
+    }
+
+    /// <summary>
+    /// A refusal arrives in one of several shapes. The validator answers with
+    /// <c>{ violations: [...] }</c> and the attachment endpoint with <c>{ error: "..." }</c>, but a
+    /// request that fails model binding never reaches either and is answered with ASP.NET's own
+    /// ProblemDetails. Reporting nothing in that last case would hide a real bug — a mismatched
+    /// multipart part name shows up there and nowhere else — so every shape is unpacked.
+    /// </summary>
+    private static IReadOnlyList<string> ExtractMessages(string body)
     {
         try
         {
@@ -74,6 +160,11 @@ public class SmartXApiClient(HttpClient httpClient)
             if (payload?.Violations is { Count: > 0 } violations)
             {
                 return violations;
+            }
+
+            if (!string.IsNullOrWhiteSpace(payload?.Error))
+            {
+                return [payload.Error];
             }
 
             if (payload?.Errors is { Count: > 0 } errors)
@@ -88,10 +179,10 @@ public class SmartXApiClient(HttpClient httpClient)
         }
         catch (JsonException)
         {
-            // Falls through to the generic message below.
+            // Falls through to the caller's own fallback message.
         }
 
-        return ["The gateway rejected the registration without explaining why."];
+        return [];
     }
 
     private sealed class RejectionPayload
@@ -101,6 +192,13 @@ public class SmartXApiClient(HttpClient httpClient)
         public string? Title { get; set; }
 
         public Dictionary<string, List<string>>? Errors { get; set; }
+
+        public string? Error { get; set; }
+    }
+
+    private sealed class AttachmentPayload
+    {
+        public string? SavedName { get; set; }
     }
 }
 
@@ -126,4 +224,27 @@ public class SensorRegistrationOutcome
     public static SensorRegistrationOutcome Succeeded(SensorRecord sensor) => new(sensor, []);
 
     public static SensorRegistrationOutcome Failed(IReadOnlyList<string> violations) => new(null, violations);
+}
+
+/// <summary>
+/// Result of an attachment upload. A single message is enough here: unlike a registration, an
+/// upload fails for one reason at a time rather than accumulating structural faults.
+/// </summary>
+public class AttachmentUploadOutcome
+{
+    private AttachmentUploadOutcome(string? fileName, string? errorMessage)
+    {
+        FileName = fileName;
+        ErrorMessage = errorMessage;
+    }
+
+    public string? FileName { get; }
+
+    public string? ErrorMessage { get; }
+
+    public bool IsSuccess => FileName is not null;
+
+    public static AttachmentUploadOutcome Succeeded(string fileName) => new(fileName, null);
+
+    public static AttachmentUploadOutcome Failed(string errorMessage) => new(null, errorMessage);
 }
