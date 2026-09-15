@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+# Classroom Autograde stays in autograde.yaml. This workflow is the
+# project's own continuous check: unit tests, API compile, and a short
+# live-endpoint smoke against a started gateway process.
+
+jobs:
+  unit-tests:
+    name: Shared unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: |
+          dotnet restore SmartX.Shared/SmartX.Shared.csproj
+          dotnet restore SmartX.Shared.Tests/SmartX.Shared.Tests.csproj
+
+      - name: Test
+        run: dotnet test SmartX.Shared.Tests/SmartX.Shared.Tests.csproj --configuration Release --no-restore --verbosity normal
+
+  api-build-and-smoke:
+    name: API build and smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore and build API
+        run: |
+          dotnet restore SmartX.Api/SmartX.Api.csproj
+          dotnet build SmartX.Api/SmartX.Api.csproj --configuration Release --no-restore
+
+      - name: Smoke — register, threshold, alerts
+        shell: bash
+        run: |
+          set -euo pipefail
+          export ASPNETCORE_ENVIRONMENT=Development
+          export ASPNETCORE_URLS=http://127.0.0.1:5022
+
+          # HTTPS redirection has nothing to redirect to under ASPNETCORE_URLS=http
+          # only; the middleware warning is cosmetic and not a smoke failure.
+
+          dotnet run --project SmartX.Api/SmartX.Api.csproj --configuration Release --no-build &
+          API_PID=$!
+
+          cleanup() {
+            kill "$API_PID" 2>/dev/null || true
+            wait "$API_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          echo "Waiting for gateway..."
+          for i in $(seq 1 30); do
+            if curl -sf "http://127.0.0.1:5022/api/alerts" >/dev/null; then
+              echo "Gateway ready after ${i}s"
+              break
+            fi
+            if ! kill -0 "$API_PID" 2>/dev/null; then
+              echo "API process exited before becoming ready"
+              exit 1
+            fi
+            sleep 1
+            if [ "$i" -eq 30 ]; then
+              echo "Timed out waiting for API"
+              exit 1
+            fi
+          done
+
+          printf '%s\n' '{"macAddress":"CI:PWR:01","facilityName":"CI Lab","zoneName":"Zone 1","category":"PowerConsumption"}' > /tmp/register.json
+          printf '%s\n' '{"sensorId":"CI:PWR:01","value":800}' > /tmp/power-ok.json
+          printf '%s\n' '{"sensorId":"CI:PWR:01","value":1620}' > /tmp/power-breach.json
+
+          curl -sf -X POST "http://127.0.0.1:5022/api/sensors" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/register.json \
+            | tee /tmp/register-response.json
+          grep -q "CI:PWR:01" /tmp/register-response.json
+
+          # In-band reading must not be required to clear alerts — just proves ingest works.
+          curl -sf -X POST "http://127.0.0.1:5022/api/telemetry/power" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/power-ok.json >/dev/null
+
+          # Breach must produce a Warning group.
+          curl -sf -X POST "http://127.0.0.1:5022/api/telemetry/power" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/power-breach.json >/dev/null
+
+          curl -sf "http://127.0.0.1:5022/api/alerts" | tee /tmp/alerts.json
+          grep -q "CI:PWR:01" /tmp/alerts.json
+          grep -q "ThresholdBreach" /tmp/alerts.json
+          grep -q "Warning" /tmp/alerts.json
+          grep -q "1620" /tmp/alerts.json
+
+          echo "API smoke passed"
+
+  client-windows-build:
+    name: MAUI client Windows build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui-windows --skip-manifest-update
+
+      - name: Build Windows client
+        run: |
+          dotnet restore SmartX.Client/SmartX.Client.csproj
+          dotnet build SmartX.Client/SmartX.Client.csproj -f net10.0-windows10.0.19041.0 --configuration Release --no-restore
