@@ -6,16 +6,14 @@
              Title="Smart-X Gateway"
              Shell.NavBarIsVisible="False">
 
-    <ScrollView>
-        <!--
-            The content column is centred and capped rather than stretched, so the cards stay a
-            comfortable reading width on a wide desktop window while still collapsing to the full
-            width of a narrow phone screen.
-        -->
-        <VerticalStackLayout Padding="24,32,24,40"
-                             Spacing="28"
-                             HorizontalOptions="Center"
-                             MaximumWidthRequest="680">
+    <!--
+        The content column is centred and capped rather than stretched, so the cards stay a
+        comfortable reading width on a wide desktop window while still collapsing to the full width
+        of a narrow phone screen. The cap belongs on the ScrollView: a capped, centred child inside
+        a ScrollView is measured against an unconstrained width and overflows the viewport.
+    -->
+    <ScrollView HorizontalOptions="Center" MaximumWidthRequest="680">
+        <VerticalStackLayout Padding="24,32,24,40" Spacing="28">
 
             <VerticalStackLayout Spacing="8">
                 <Label Text="SMART-X" Style="{StaticResource SectionLabel}" />
