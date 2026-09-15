@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartX.Api.Models;
 using SmartX.Api.Services;
+using SmartX.Shared.Contracts;
 using SmartX.Shared.Telemetry;
 
 namespace SmartX.Api.Controllers;
@@ -14,20 +15,34 @@ namespace SmartX.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/telemetry")]
-public class TelemetryController(SmartXStore store) : ControllerBase
+public class TelemetryController(SmartXStore store, AlertAggregationService alerts) : ControllerBase
 {
     [HttpPost("environmental")]
     public ActionResult<TelemetryPacket<float>> PostEnvironmental([FromBody] ReadingRequest<float> request)
     {
-        var rejection = Reject(request.SensorId, SensorCategory.Environmental);
-        return rejection ?? Ok(store.RecordEnvironmental(request.SensorId, request.Value));
+        var rejection = Reject(request.SensorId, SensorCategory.Environmental, out var sensor);
+        if (rejection is not null)
+        {
+            return rejection;
+        }
+
+        var packet = store.RecordEnvironmental(request.SensorId, request.Value);
+        alerts.CheckThreshold(sensor.MacAddress, sensor.DeploymentPath, sensor.Category, request.Value);
+        return Ok(packet);
     }
 
     [HttpPost("power")]
     public ActionResult<TelemetryPacket<int>> PostPower([FromBody] ReadingRequest<int> request)
     {
-        var rejection = Reject(request.SensorId, SensorCategory.PowerConsumption);
-        return rejection ?? Ok(store.RecordPower(request.SensorId, request.Value));
+        var rejection = Reject(request.SensorId, SensorCategory.PowerConsumption, out var sensor);
+        if (rejection is not null)
+        {
+            return rejection;
+        }
+
+        var packet = store.RecordPower(request.SensorId, request.Value);
+        alerts.CheckThreshold(sensor.MacAddress, sensor.DeploymentPath, sensor.Category, request.Value);
+        return Ok(packet);
     }
 
     [HttpPost("actuator")]
@@ -102,14 +117,19 @@ public class TelemetryController(SmartXStore store) : ControllerBase
     /// category it is publishing to. A mismatch is a 400 rather than a 404 because the sensor
     /// exists; it is the routing of its data that is wrong.
     /// </summary>
-    private ActionResult? Reject(string sensorId, SensorCategory expectedCategory)
+    private ActionResult? Reject(string sensorId, SensorCategory expectedCategory) =>
+        Reject(sensorId, expectedCategory, out _);
+
+    private ActionResult? Reject(string sensorId, SensorCategory expectedCategory, out SensorRecord sensor)
     {
+        sensor = null!;
+
         if (string.IsNullOrWhiteSpace(sensorId))
         {
             return BadRequest(new { error = "A telemetry reading must reference a registered sensor." });
         }
 
-        if (!store.TryGetSensor(sensorId, out var sensor))
+        if (!store.TryGetSensor(sensorId, out sensor))
         {
             return NotFound(new { error = $"Sensor '{sensorId}' is not registered." });
         }

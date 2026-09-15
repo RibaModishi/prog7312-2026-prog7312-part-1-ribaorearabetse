@@ -14,6 +14,8 @@ builder.Services.AddOpenApi();
 // The gateway keeps the deployment tree and all accumulated telemetry in process, so the store
 // must be a singleton; a scoped registration would discard every registered sensor per request.
 builder.Services.AddSingleton<SmartXStore>();
+builder.Services.AddSingleton<AlertAggregationService>();
+builder.Services.AddHostedService<SensorDisconnectWatcher>();
 
 var app = builder.Build();
 
