@@ -16,6 +16,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<SmartXStore>();
 builder.Services.AddSingleton<AlertAggregationService>();
 builder.Services.AddHostedService<SensorDisconnectWatcher>();
+builder.Services.AddHostedService<SensorTelemetrySimulator>();
 
 var app = builder.Build();
 
