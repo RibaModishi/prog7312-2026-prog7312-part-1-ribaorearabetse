@@ -124,6 +124,17 @@ public partial class SensorRegistrationPage : ContentPage
                 return;
             }
 
+            // A zero-byte file is a real thing to pick by accident — a screenshot that failed to
+            // save looks identical in the picker. The gateway rejects it anyway, so this only
+            // moves the answer forward to the moment of choosing.
+            if (await TryGetFileSizeAsync(picked) == 0)
+            {
+                _pendingFile = null;
+                PendingFileRow.IsVisible = false;
+                ShowFeedback("Nothing to upload", [$"'{picked.FileName}' is empty."], isSuccess: false);
+                return;
+            }
+
             _pendingFile = picked;
             PickedFileLabel.Text = picked.FileName;
             PendingFileRow.IsVisible = true;
@@ -168,6 +179,23 @@ public partial class SensorRegistrationPage : ContentPage
         finally
         {
             SetUploadBusy(false);
+        }
+    }
+
+    /// <summary>
+    /// Returns null when the size cannot be established rather than guessing, so a stream that
+    /// simply cannot report its length is still allowed through to the gateway's own check.
+    /// </summary>
+    private static async Task<long?> TryGetFileSizeAsync(FileResult file)
+    {
+        try
+        {
+            await using var stream = await file.OpenReadAsync();
+            return stream.CanSeek ? stream.Length : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return null;
         }
     }
 
