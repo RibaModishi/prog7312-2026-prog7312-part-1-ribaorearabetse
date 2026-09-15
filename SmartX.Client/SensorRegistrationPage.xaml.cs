@@ -8,6 +8,25 @@ public partial class SensorRegistrationPage : ContentPage
 {
     private readonly SmartXApiClient _apiClient;
 
+    // Set by a successful registration and used as the upload target, so an attachment can only
+    // ever be sent against a sensor the gateway has already accepted.
+    private string? _attachmentSensorId;
+    private FileResult? _pendingFile;
+
+    /// <summary>
+    /// A deployment record is a photo one moment and a hardware log the next, so the filter stays
+    /// broad on purpose. Narrowing it to a single family would block exactly the configuration
+    /// files an engineer is most likely to attach.
+    /// </summary>
+    private static readonly FilePickerFileType AttachmentFileTypes = new(
+        new Dictionary<DevicePlatform, IEnumerable<string>>
+        {
+            [DevicePlatform.WinUI] = [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".txt", ".log", ".json", ".xml", ".csv", ".yaml", ".yml", ".ini", ".cfg", ".conf"],
+            [DevicePlatform.Android] = ["image/*", "text/*", "application/json", "application/xml"],
+            [DevicePlatform.iOS] = ["public.image", "public.text", "public.json", "public.xml"],
+            [DevicePlatform.MacCatalyst] = ["public.image", "public.text", "public.json", "public.xml"]
+        });
+
     private static readonly CategoryOption[] CategoryOptions =
     [
         new(SensorCategory.Environmental, "Environmental — soil, temperature, humidity"),
@@ -76,6 +95,7 @@ public partial class SensorRegistrationPage : ContentPage
                     isSuccess: true);
 
                 ClearForm();
+                OpenAttachmentsFor(sensor.MacAddress);
             }
             else
             {
@@ -86,6 +106,89 @@ public partial class SensorRegistrationPage : ContentPage
         {
             SetBusy(false);
         }
+    }
+
+    private async void OnChooseFileClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            var picked = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Select a file to attach",
+                FileTypes = AttachmentFileTypes
+            });
+
+            // A null result means the picker was dismissed, which is not an error worth reporting.
+            if (picked is null)
+            {
+                return;
+            }
+
+            _pendingFile = picked;
+            PickedFileLabel.Text = picked.FileName;
+            PendingFileRow.IsVisible = true;
+            UploadButton.IsEnabled = true;
+        }
+        catch (Exception ex) when (ex is FeatureNotSupportedException or PermissionException)
+        {
+            ShowFeedback("Cannot open the file picker", [ex.Message], isSuccess: false);
+        }
+    }
+
+    private async void OnUploadClicked(object? sender, EventArgs e)
+    {
+        if (_attachmentSensorId is null || _pendingFile is null)
+        {
+            return;
+        }
+
+        SetUploadBusy(true);
+
+        try
+        {
+            var outcome = await _apiClient.UploadAttachmentAsync(_attachmentSensorId, _pendingFile);
+
+            if (outcome.IsSuccess)
+            {
+                ShowFeedback(
+                    "Attachment uploaded",
+                    [$"'{_pendingFile.FileName}' was stored against {_attachmentSensorId} as {outcome.FileName}."],
+                    isSuccess: true);
+
+                // Clearing the pending file stops the same upload being fired twice while leaving
+                // the section open for the next one.
+                _pendingFile = null;
+                PickedFileLabel.Text = "Choose another file to attach more.";
+            }
+            else
+            {
+                ShowFeedback("Upload failed", [outcome.ErrorMessage!], isSuccess: false);
+            }
+        }
+        finally
+        {
+            SetUploadBusy(false);
+        }
+    }
+
+    private void OpenAttachmentsFor(string sensorId)
+    {
+        _attachmentSensorId = sensorId;
+        _pendingFile = null;
+
+        AttachmentTargetLabel.Text = $"Attaching to {sensorId}";
+        PendingFileRow.IsVisible = false;
+        PickedFileLabel.Text = string.Empty;
+        AttachmentCard.IsVisible = true;
+    }
+
+    private void SetUploadBusy(bool isBusy)
+    {
+        ChooseFileButton.IsEnabled = !isBusy;
+        UploadButton.IsEnabled = !isBusy && _pendingFile is not null;
+        UploadButton.Text = isBusy ? "Uploading…" : "Upload";
+        UploadSpinner.IsVisible = isBusy;
+        UploadSpinner.IsRunning = isBusy;
     }
 
     private void SetBusy(bool isBusy)

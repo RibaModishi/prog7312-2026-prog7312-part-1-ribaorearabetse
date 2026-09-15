@@ -95,6 +95,52 @@
             </Border>
 
             <!--
+                Attaching a file needs a sensor to attach it to, so this section stays hidden until
+                a registration succeeds and hands back the identifier the upload endpoint expects.
+            -->
+            <Border x:Name="AttachmentCard"
+                    Style="{StaticResource PillarCard}"
+                    IsVisible="False">
+                <VerticalStackLayout Spacing="12">
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Attach a File" Style="{StaticResource PillarTitle}" />
+                        <Label x:Name="AttachmentTargetLabel" Style="{StaticResource FieldHint}" />
+                        <Label Style="{StaticResource FieldHint}"
+                               Text="Optional — a configuration file, deployment photo or hardware log for this sensor." />
+                    </VerticalStackLayout>
+
+                    <Button x:Name="ChooseFileButton"
+                            Style="{StaticResource SecondaryButton}"
+                            Text="Choose File"
+                            Clicked="OnChooseFileClicked" />
+
+                    <Grid x:Name="PendingFileRow"
+                          IsVisible="False"
+                          ColumnDefinitions="*,Auto,Auto"
+                          ColumnSpacing="12">
+                        <Label x:Name="PickedFileLabel"
+                               Grid.Column="0"
+                               Style="{StaticResource FieldHint}"
+                               LineBreakMode="MiddleTruncation"
+                               VerticalOptions="Center" />
+                        <Button x:Name="UploadButton"
+                                Grid.Column="1"
+                                Style="{StaticResource PrimaryButton}"
+                                Text="Upload"
+                                Clicked="OnUploadClicked" />
+                        <ActivityIndicator x:Name="UploadSpinner"
+                                           Grid.Column="2"
+                                           IsVisible="False"
+                                           IsRunning="False"
+                                           Color="{StaticResource SmartXAccent}"
+                                           VerticalOptions="Center" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!--
                 One feedback panel serves both outcomes. The stroke colour carries the success or
                 failure signal, and every violation is appended as its own line rather than being
                 collapsed into a single sentence.
