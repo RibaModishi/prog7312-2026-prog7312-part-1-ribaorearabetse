@@ -1,6 +1,6 @@
 using SmartX.Shared.Telemetry;
 
-namespace SmartX.Api.Models;
+namespace SmartX.Shared.Contracts;
 
 /// <summary>
 /// Registration payload for a new sensor. The sub-zone is optional because a sensor can sit

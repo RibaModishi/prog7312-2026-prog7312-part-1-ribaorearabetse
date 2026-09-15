@@ -1,4 +1,4 @@
-using SmartX.Api.Models;
+using SmartX.Shared.Contracts;
 using SmartX.Shared.Deployment;
 using SmartX.Shared.Telemetry;
 

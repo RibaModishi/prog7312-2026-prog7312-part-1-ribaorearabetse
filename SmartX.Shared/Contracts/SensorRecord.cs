@@ -1,6 +1,6 @@
 using SmartX.Shared.Telemetry;
 
-namespace SmartX.Api.Models;
+namespace SmartX.Shared.Contracts;
 
 /// <summary>
 /// A sensor that has passed registration. The deployment path is stored as a flattened string

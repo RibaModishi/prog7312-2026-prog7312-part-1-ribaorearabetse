@@ -1,4 +1,4 @@
-namespace SmartX.Api.Models;
+namespace SmartX.Shared.Contracts;
 
 /// <summary>
 /// Outcome of a registration attempt. Violations are returned rather than thrown so the caller
