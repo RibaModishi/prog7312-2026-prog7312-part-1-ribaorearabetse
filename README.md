@@ -1,5 +1,7 @@
 # prog7312-2026-prog7312-part-1-ribaorearabetse
 
+Demo video: https://youtu.be/krwKFzlkeeE 
+
 # Smart-X — IoT Mesh Data Ingestion Gateway
 
 Smart-X is a simulated hybrid IoT mesh ecosystem for monitoring distributed environments (hydroponic farms, utility trackers, smart grid installations). This repository contains **Part 1** of the Portfolio of Evidence: the sensor data ingestion and validation gateway, covering the API backend, the MAUI client dashboard, and the shared domain logic between them.
